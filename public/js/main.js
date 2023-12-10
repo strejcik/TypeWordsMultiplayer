@@ -10,6 +10,9 @@ var wordsCounterPlayerTwo = 0;
 
 var isPlayerRoomCreator;
 
+var roomNameCreated;
+var roomName;
+
 
 
 function TypedCharacter(){
@@ -317,7 +320,6 @@ var runMainScreenOnce = (function() {
 
 
 
-
 window.addEventListener('load', function() {
 
     var user = { id: uuidv4(), roomId: 123};
@@ -400,11 +402,14 @@ window.addEventListener('load', function() {
         });
 
         socket.on('allow-request-from-p2', function(d){
-            var r=confirm("User try to connect to your room. Press ok to continue.");
+            do{
+                var r=confirm("User try to connect to your room. Press ok to continue.");
                 if (r==true)
                 {
                     socket.emit('allowtojoin',d);
                 }
+            }while(r==false)
+
         })
     });
 
@@ -847,8 +852,14 @@ window.addEventListener('load', function() {
                     if(!isPlayerRoomCreator) socket.emit('typed-p2-to-p1',player2TypedNowLetter);
                 break;
             case '`':
+                roomNameCreated = prompt("Enter room name");
+                user.roomId = roomNameCreated;
                 socket.emit('createroom', user);
                 break;
+            case 'Tab':
+                roomName = prompt("Enter room name that you want to join");
+                user.roomId = roomName;
+                socket.emit('joingame', user);
             case ' ':
                 sentence.splitSentence();
                 sentencePlayerTwo.splitSentence();
