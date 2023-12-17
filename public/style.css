@@ -22,7 +22,7 @@ body{
     padding: 20px;
     border-radius: 30px;
     text-align: center;
-
+    height: 25px;
 }
 
 .to-type-class-player-1, .to-type-class-player-2{
@@ -51,6 +51,10 @@ body{
 
 .timer-class{
     font-size: 50px;
+    position: absolute;
+    top: 50%;
+    transform: translate(0, -50%);
+    color: dodgerblue;
 }
 
 .results-screen-class {
@@ -63,12 +67,14 @@ body{
 }
 
 .container-class {
-    position:relative;
     /* important */
     display: flex;
     /* important */
     align-items: stretch;
-    justify-content: space-around;
+    justify-content: center;
+    position: absolute;
+    width: 100%;
+    top:25%
   }
   
   .child1-class-player-1, .child2-class-player-2 {

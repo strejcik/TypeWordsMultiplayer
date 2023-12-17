@@ -82,7 +82,7 @@ io.on('connection', (socket) => {
 
 
 
-        if (!isEmptyObject(tempUser) && object[game.roomId].length < 2 && tempUser?.id !== object[game.roomId][0].id){
+        if (!isEmptyObject(tempUser) && object[game.roomId]?.length < 2 && tempUser?.id !== object[game.roomId][0].id){
           console.log('2');
           console.log(tempUser);
           data.roomCreator = false;
@@ -98,6 +98,7 @@ io.on('connection', (socket) => {
 
         if(object[game.roomId].length === 1 && tempUser?.id === object[game.roomId][0].id)
         {
+          socket.join(game.roomId);
           io.to(object[game.roomId][0].id).emit("confirmjoin",tempUser);
         }
 
@@ -132,7 +133,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('typed-p2-to-p1', (dd) => {
-      if(!isEmptyObject(object) && object[dd.user.roomId].length === 2)
+      if(!isEmptyObject(object) && object[dd.user.roomId]?.length === 2)
       {
         io.to(object[dd.user.roomId][0].id).emit("typed-p2-to-p1", dd); 
       }

@@ -206,11 +206,12 @@ function MainScreen(){
 
         document.body.appendChild(mainDiv);
         mainDiv.appendChild(container);
+
+        container.appendChild(timerDiv);
         
         container.appendChild(child1);
         container.appendChild(child2);
         
-        child1.appendChild(timerDiv);
         child1.appendChild(toTypeDivPlayerOne);
         child1.appendChild(typedNowDivPlayerOne);
 
@@ -228,7 +229,7 @@ function preMainScreen(){
         let preMainScreenInfo = document.createElement('h1');
         preMainScreenInfo.setAttribute('id', 'pre-main-screen');
         preMainScreenInfo.setAttribute('class', 'pre-main-screen-class');
-        preMainScreenInfo.innerHTML = 'Press Enter to start';
+        preMainScreenInfo.innerHTML = 'Press "`" to create room and "Tab" to join room. \n When player joins your room, press "Enter" to start the game.';
 
         document.body.appendChild(preMainScreenInfo);
     }
@@ -407,19 +408,20 @@ window.addEventListener('load', function() {
         });
 
         socket.on('allow-request-from-p2', function(d){
-            do{
-                var r=confirm("User try to connect to your room. Press ok to continue.");
-                if (r==true)
-                {
-                    socket.emit('allowtojoin',d);
-                    isGameOn = true;
-                    isPlayerTwoJoinedLobby = true;
-                }
-                if(r==false){
-                    break;
-                }
-            }while(r==false)
+            function play(){
+                do{
+                    var r=confirm("User try to connect to your room. Press ok to continue.");
+                    if (r==true)
+                    {
+                        socket.emit('allowtojoin',d);
+                        isGameOn = true;
+                        isPlayerTwoJoinedLobby = true;
+                    } else break;
+                }while(r==false)
 
+                window.removeEventListener('focus', play);
+            }
+            window.addEventListener("focus", play);
         })
 
 
@@ -890,12 +892,14 @@ window.addEventListener('load', function() {
             case '`':
                 roomNameCreated = prompt("Enter room name");
                 user.roomId = roomNameCreated;
-                socket.emit('createroom', user);
+                if(roomNameCreated.length !== 0)
+                    socket.emit('createroom', user);
                 break;
             case 'Tab':
                 roomName = prompt("Enter room name that you want to join");
                 user.roomId = roomName;
-                socket.emit('joingame', user);
+                if(roomName.length !== 0)
+                    socket.emit('joingame', user);
             case ' ':
                 sentence.splitSentence();
                 sentencePlayerTwo.splitSentence();
