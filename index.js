@@ -52,6 +52,7 @@ io.on('connection', (socket) => {
         object[user.roomId] = array;
         
           socket.join(user.roomId);
+          io.to(object[array[0].roomId][0].id).emit("confirmjoin",array[0]);
         console.log(object[user.roomId][0]);
     })
 
@@ -135,6 +136,10 @@ io.on('connection', (socket) => {
       {
         io.to(object[dd.user.roomId][0].id).emit("typed-p2-to-p1", dd); 
       }
+    });
+
+    socket.on('switch-p2-screen', (ddd) => {
+      io.to(object[ddd.roomId][1].id).emit("switch-p2-screen"); 
     });
 })
 

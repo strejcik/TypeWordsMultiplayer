@@ -13,6 +13,10 @@ var isPlayerRoomCreator;
 var roomNameCreated;
 var roomName;
 
+var isGameOn = false;
+var isPlayerTwoJoinedLobby = false;
+
+
 
 
 function TypedCharacter(){
@@ -369,14 +373,15 @@ window.addEventListener('load', function() {
                 return;
             }
             if(d.letter === 'Whitespace') {
-                typedNowPlayerTwo.innerHTML = ""
+                if (typedNowPlayerTwo !== undefined)
+                    typedNowPlayerTwo.innerHTML = "";
                 return;
             }
 
             d?.sentence && (to_type_player2.innerHTML = d.sentence)
 
-
-            typedNowPlayerTwo.innerHTML += d.letter;
+            if(typedNowPlayerTwo !== undefined)
+                typedNowPlayerTwo.innerHTML += d.letter;
         });
 
 
@@ -407,10 +412,41 @@ window.addEventListener('load', function() {
                 if (r==true)
                 {
                     socket.emit('allowtojoin',d);
+                    isGameOn = true;
+                    isPlayerTwoJoinedLobby = true;
+                }
+                if(r==false){
+                    break;
                 }
             }while(r==false)
 
         })
+
+
+        socket.on('switch-p2-screen', () => {
+            console.log('RECEIVED SWITCH SCREEN')
+
+            
+            runMainScreenOnce();
+
+            typed_now = document.getElementById('typed_now-1');
+            to_type = document.getElementById('to-type-1');
+            to_type_player2 = document.getElementById('to-type-2');
+
+            typedNowPlayerTwo = document.getElementById('typed_now-2');
+
+
+            if(to_type != null)
+                to_type.innerHTML = sentenceArray[sentenceArrayIndex].join(" ");
+
+            if(to_type_player2 != null)
+                to_type_player2.innerHTML = sentenceArrayPlayerTwo[sentenceArrayIndexPlayer2].join(" ");
+
+
+            runTimerOnce();
+            let preMainScreen = document.getElementById("pre-main-screen");
+            if(preMainScreen != null) preMainScreen.outerHTML = "";
+        });
     });
 
     let typedCharacter = new TypedCharacter();
@@ -425,9 +461,9 @@ window.addEventListener('load', function() {
 
 
 
-    let typed_now;
-    let to_type;
-    let to_type_player2;
+    var typed_now;
+    var to_type;
+    var to_type_player2;
 
     
     
@@ -913,12 +949,12 @@ window.addEventListener('load', function() {
 
                 let tempObj = {};
                 tempObj.user = user;
-                tempObj.sentence = to_type.innerHTML;
+                tempObj.sentence = to_type?.innerHTML;
 
 
                 let tempObj2 = {};
                 tempObj2.user = user;
-                tempObj2.sentence = to_type.innerHTML;
+                tempObj2.sentence = to_type?.innerHTML;
                 
                 if(isPlayerRoomCreator) socket.emit('typed-p1-to-p2',tempObj);
                 if(!isPlayerRoomCreator) socket.emit('typed-p2-to-p1',tempObj2);
@@ -942,24 +978,32 @@ window.addEventListener('load', function() {
                 if(!isPlayerRoomCreator) socket.emit('typed-p2-to-p1',player2TypedNowLetter);
                 break;
             case 'Enter':
-                socket.emit('joingame', user);
-                runMainScreenOnce();
-                typed_now = document.getElementById('typed_now-1');
-                to_type = document.getElementById('to-type-1');
-                to_type_player2 = document.getElementById('to-type-2');
+                
+                
+                if(isGameOn)
+                {
+                    socket.emit('joingame', user);
+                    socket.emit('switch-p2-screen', user);
+                    runMainScreenOnce();
 
-                typedNowPlayerTwo = document.getElementById('typed_now-2');
+                    typed_now = document.getElementById('typed_now-1');
+                    to_type = document.getElementById('to-type-1');
+                    to_type_player2 = document.getElementById('to-type-2');
+
+                    typedNowPlayerTwo = document.getElementById('typed_now-2');
 
 
-                if(to_type != null)
-                    to_type.innerHTML = sentenceArray[sentenceArrayIndex].join(" ");
+                    if(to_type != null)
+                        to_type.innerHTML = sentenceArray[sentenceArrayIndex].join(" ");
 
-                if(to_type_player2 != null)
-                    to_type_player2.innerHTML = sentenceArrayPlayerTwo[sentenceArrayIndexPlayer2].join(" ");
+                    if(to_type_player2 != null)
+                        to_type_player2.innerHTML = sentenceArrayPlayerTwo[sentenceArrayIndexPlayer2].join(" ");
 
-                runTimerOnce();
-                let preMainScreen = document.getElementById("pre-main-screen");
-                if(preMainScreen != null) preMainScreen.outerHTML = "";
+
+                    runTimerOnce();
+                    let preMainScreen = document.getElementById("pre-main-screen");
+                    if(preMainScreen != null) preMainScreen.outerHTML = "";
+                }
                 break;
         }
         
