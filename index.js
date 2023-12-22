@@ -96,7 +96,7 @@ io.on('connection', (socket) => {
           io.to(object[game.roomId][1].id).emit("confirmjoin",data);
         }
 
-        if(object[game.roomId].length === 1 && tempUser?.id === object[game.roomId][0].id)
+        if(object[game.roomId]?.length === 1 && tempUser?.id === object[game.roomId][0].id)
         {
           socket.join(game.roomId);
           io.to(object[game.roomId][0].id).emit("confirmjoin",tempUser);
@@ -142,6 +142,14 @@ io.on('connection', (socket) => {
     socket.on('switch-p2-screen', (ddd) => {
       io.to(object[ddd.roomId][1].id).emit("switch-p2-screen"); 
     });
+
+    socket.on('result-p1-to-p2', (result) => {
+      io.to(object[result.roomId][1].id).emit("result-p1-to-p2", result); 
+    })
+
+    socket.on('result-p2-to-p1', (result) => {
+      io.to(object[result.roomId][0].id).emit("result-p2-to-p1", result); 
+    })
 })
 
 app.get('*', (req, res) => {

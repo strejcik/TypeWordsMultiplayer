@@ -1,3 +1,7 @@
+var socket;
+var user;
+
+
 var timerExecuted = false;
 var mainScreenExecuted = false;
 var errors = 0;
@@ -240,11 +244,15 @@ function ResultsScreen(){
 
     function createResultsScreen() {
         let toTypeDiv = document.getElementById("to-type-1");
+        let toTypeDivPlayerTwo = document.getElementById('to-type-2');
         let typedNowDiv = document.getElementById('typed_now-1');
+        let typedNowDivPlayerTwo = document.getElementById('typed_now-2');
         let timerDiv = document.getElementById('timer');
 
         toTypeDiv.outerHTML = "";
+        toTypeDivPlayerTwo.outerHTML = "";
         typedNowDiv.outerHTML = "";
+        typedNowDivPlayerTwo.outerHTML = "";
         timerDiv.outerHTML = "";
         
         
@@ -252,8 +260,13 @@ function ResultsScreen(){
         let resultsScreenInfo = document.createElement('h1');
         resultsScreenInfo.setAttribute('id', 'results-screen');
         resultsScreenInfo.setAttribute('class', 'results-screen-class');
-        resultsScreenInfo.innerHTML = `Errors: ${errors}, Correct words: ${wordsCounter}`;
+        let p1ToP2String = `You- Errors: ${errors}, Correct words: ${wordsCounter} \n Your enemy- Errors: ${errorsPlayerTwo}, Correct words: ${wordsCounterPlayerTwo}`;
+        let p2toP1String = `You- Errors: ${errors}, Correct words: ${wordsCounter} \n Your enemy- Errors: ${errorsPlayerTwo}, Correct words: ${wordsCounterPlayerTwo}`
+        if(isPlayerRoomCreator) 
+            resultsScreenInfo.innerHTML = p1ToP2String;
 
+        if(!isPlayerRoomCreator)
+            resultsScreenInfo.innerHTML = p2toP1String
         document.body.appendChild(resultsScreenInfo);
     }
 }
@@ -289,9 +302,18 @@ function countdown(minutes, seconds) {
 
         if(minutes == 0 && seconds == 0)
         {
-            console.log('Errors:', errors);
-            console.log('Correct typed words:', wordsCounter);
-            new ResultsScreen();
+            let result = {};
+            result.roomId = user.roomId;
+            result.errors = errors;
+            result.wordsCounter = wordsCounter;
+
+            if(isPlayerRoomCreator)
+                socket.emit('result-p1-to-p2', result);
+
+            if(!isPlayerRoomCreator)
+                socket.emit('result-p2-to-p1', result);
+            
+            //isPlayerRoomCreator && new ResultsScreen();
         }
     }
     tick();
@@ -327,8 +349,7 @@ var runMainScreenOnce = (function() {
 
 window.addEventListener('load', function() {
 
-    var user = { id: uuidv4(), roomId: 123};
-    console.log(user);
+    user = { id: uuidv4(), roomId: 123};
 
 
 
@@ -345,13 +366,11 @@ window.addEventListener('load', function() {
     var player2TypedNowLetter = {};
     //===============Player Two===============/
 
-    var socket = io('http://127.0.0.1:3001');
+    socket = io('http://127.0.0.1:3001');
 
     socket.on('connect', function(data){
         
         socket.on("typed-p1-to-p2", (d) => {
-            console.log(d);
-            console.log('=======typed-p1-to-p2======');
             if(d.letter === 'Backspace') {
                 typedNowPlayerTwo.innerHTML = typedNowPlayerTwo.innerHTML.slice(0, -1);
                 return;
@@ -362,13 +381,11 @@ window.addEventListener('load', function() {
             }
 
             d?.sentence && (to_type_player2.innerHTML = d.sentence)
-            
-            typedNowPlayerTwo.innerHTML += d.letter;
+            if(d?.letter !== undefined)
+                typedNowPlayerTwo.innerHTML += d?.letter;
         });
 
         socket.on("typed-p2-to-p1", (d) => {
-            console.log(d);
-            console.log('=======typed-p2-to-p1======');
             if(d.letter === 'Backspace') {
                 typedNowPlayerTwo.innerHTML = typedNowPlayerTwo.innerHTML.slice(0, -1);
                 return;
@@ -380,27 +397,15 @@ window.addEventListener('load', function() {
             }
 
             d?.sentence && (to_type_player2.innerHTML = d.sentence)
-
-            if(typedNowPlayerTwo !== undefined)
-                typedNowPlayerTwo.innerHTML += d.letter;
+            if(d?.letter !== undefined)
+                typedNowPlayerTwo.innerHTML += d?.letter;
         });
-
-
-
-        socket.on("to-type-p1-to-p2", (d) => {
-            console.log('=======to-type-p1-to-p2======');
-            console.log(d.sentence);
-            
-        });
-
 
         socket.on('confirmjoin',function(d){
 
             if(d.roomCreator === true)
             {
                 isPlayerRoomCreator = true;
-                console.log('confirm join passed');
-                console.log(d);
                 socket.emit('allowtojoin',d);
             } else{
                 socket.emit('allowtojoin-p2-to-p1',d);
@@ -426,7 +431,6 @@ window.addEventListener('load', function() {
 
 
         socket.on('switch-p2-screen', () => {
-            console.log('RECEIVED SWITCH SCREEN')
 
             
             runMainScreenOnce();
@@ -448,6 +452,22 @@ window.addEventListener('load', function() {
             runTimerOnce();
             let preMainScreen = document.getElementById("pre-main-screen");
             if(preMainScreen != null) preMainScreen.outerHTML = "";
+        });
+
+        socket.on('result-p1-to-p2', (result) => {
+            if(!isPlayerRoomCreator){
+                errorsPlayerTwo = result.errors;
+                wordsCounterPlayerTwo = result.wordsCounter;
+                new ResultsScreen();
+            }
+        });
+
+        socket.on('result-p2-to-p1', (result) => {
+            if(isPlayerRoomCreator){
+                errorsPlayerTwo = result.errors;
+                wordsCounterPlayerTwo = result.wordsCounter;
+                new ResultsScreen();
+            }
         });
     });
 
@@ -911,20 +931,10 @@ window.addEventListener('load', function() {
                 }
                 else
                 {
+                    if(key == 'Tab') return;
+                    
                     errors++;
                 }
-
-
-                if(typedCharacterPlayerTwo.compareTwoStrings(typedCharacterPlayerTwo.characters, sentenceArrayPlayerTwo[0][0]))
-                {
-                    sentencePlayerTwo.deleteFirstArrEl();
-                    wordsCounterPlayerTwo++;
-                }
-                else
-                {
-                    errorsPlayerTwo++;
-                }
-
 
 
 
@@ -937,6 +947,7 @@ window.addEventListener('load', function() {
                     to_type.innerHTML = sentenceArray[sentenceArrayIndex].join(" ");
                 
                 
+                    
                 //Clear typed_now div
                 if(to_type != null)
                     typed_now.innerHTML = "";
