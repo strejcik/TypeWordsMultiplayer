@@ -273,65 +273,6 @@ function ResultsScreen(){
 
 
 
-
-
-
-
-
-
-
-
-
-
-function countdown(minutes, seconds) {
-    var timeoutHandle;
-    function tick() {
-        var counter = document.getElementById("timer");
-        if(counter != null)
-            counter.innerHTML = minutes.toString() + ":" + (seconds < 10 ? "0" : "") + String(seconds);
-        seconds--;
-        if (seconds >= 0) {
-            timeoutHandle = setTimeout(tick, 1000);
-        } else {
-            if (minutes >= 1) {
-                setTimeout(function () {
-                    countdown(minutes - 1, 59);
-                }, 1000);
-            }
-        }
-
-        if(minutes == 0 && seconds == 0)
-        {
-            let result = {};
-            result.roomId = user.roomId;
-            result.errors = errors;
-            result.wordsCounter = wordsCounter;
-
-            if(isPlayerRoomCreator)
-                socket.emit('result-p1-to-p2', result);
-
-            if(!isPlayerRoomCreator)
-                socket.emit('result-p2-to-p1', result);
-            
-            //isPlayerRoomCreator && new ResultsScreen();
-        }
-    }
-    tick();
-}
-
-
-
-
-var runTimerOnce = (function() {
-    
-    return function() {
-        if (!timerExecuted) {
-            timerExecuted = true;
-            countdown(1, 0);
-        }
-    };
-})();
-
 var runMainScreenOnce = (function() {
     
     return function() {
@@ -449,7 +390,6 @@ window.addEventListener('load', function() {
                 to_type_player2.innerHTML = sentenceArrayPlayerTwo[sentenceArrayIndexPlayer2].join(" ");
 
 
-            runTimerOnce();
             let preMainScreen = document.getElementById("pre-main-screen");
             if(preMainScreen != null) preMainScreen.outerHTML = "";
         });
@@ -469,6 +409,36 @@ window.addEventListener('load', function() {
                 new ResultsScreen();
             }
         });
+
+        socket.on('timer-player-1-duration', (duration) => {
+            let counter = document.getElementById("timer");
+            isPlayerRoomCreator && (counter.innerHTML = duration);
+
+            if(duration === '0:00'){
+                let result = {};
+                result.roomId = user.roomId;
+                result.errors = errors;
+                result.wordsCounter = wordsCounter;
+    
+                if(isPlayerRoomCreator)
+                    socket.emit('result-p1-to-p2', result);
+            }
+        })
+
+        socket.on('timer-player-2-duration', (duration) => {
+            let counter = document.getElementById("timer");
+            !isPlayerRoomCreator && (counter.innerHTML = duration);
+
+            if(duration === '0:00'){
+                let result = {};
+                result.roomId = user.roomId;
+                result.errors = errors;
+                result.wordsCounter = wordsCounter;
+
+                if(!isPlayerRoomCreator)
+                    socket.emit('result-p2-to-p1', result);
+            }
+        })
     });
 
     let typedCharacter = new TypedCharacter();
@@ -997,9 +967,14 @@ window.addEventListener('load', function() {
                 
                 if(isGameOn)
                 {
+                    let timer = {};
+                    timer.user = user;
+                    timer.action = isGameOn? 'start' : 'stop';
                     socket.emit('joingame', user);
-                    socket.emit('switch-p2-screen', user);
                     runMainScreenOnce();
+                    socket.emit('switch-p2-screen', user);
+                    socket.emit('set-timer', timer);
+
 
                     typed_now = document.getElementById('typed_now-1');
                     to_type = document.getElementById('to-type-1');
@@ -1014,8 +989,6 @@ window.addEventListener('load', function() {
                     if(to_type_player2 != null)
                         to_type_player2.innerHTML = sentenceArrayPlayerTwo[sentenceArrayIndexPlayer2].join(" ");
 
-
-                    runTimerOnce();
                     let preMainScreen = document.getElementById("pre-main-screen");
                     if(preMainScreen != null) preMainScreen.outerHTML = "";
                 }

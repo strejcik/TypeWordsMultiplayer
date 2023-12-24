@@ -26,6 +26,68 @@ const io = require('socket.io')(server, {
 
 var object={};
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function countdown(minutes, seconds, arg) {
+  var timeoutHandle;
+  function tick() {
+    var formattedTime =  minutes.toString() + ":" + (seconds < 10 ? "0" : "") + String(seconds);
+    
+    if(object[arg.user.roomId]?.length === 2){
+      io.to(object[arg.user.roomId][0].id).emit("timer-player-1-duration", formattedTime); 
+      io.to(object[arg.user.roomId][1].id).emit("timer-player-2-duration", formattedTime); 
+    }
+    else
+    {
+      seconds = 0;
+    }
+          
+      seconds--;
+      if (seconds >= 0) {
+          timeoutHandle = setTimeout(tick, 1000);
+      } else {
+          if (minutes >= 1) {
+              setTimeout(function () {
+                  countdown(minutes - 1, 59, arg);
+              }, 1000);
+          }
+      }
+
+      if(minutes == 0 && seconds == 0 && object[arg.user.roomId]?.length === 2)
+      {
+        io.to(object[arg.user.roomId][0].id).emit("timer-player-1-duration", formattedTime); 
+        io.to(object[arg.user.roomId][1].id).emit("timer-player-2-duration", formattedTime); 
+      }
+  }
+  tick();
+}
+
+
+
+
+
+
+
+
+
+
+
+
 io.on('connection', (socket) => {
     socket.on('disconnect', (s) => {
         console.log("user disconnected");
@@ -150,6 +212,13 @@ io.on('connection', (socket) => {
     socket.on('result-p2-to-p1', (result) => {
       io.to(object[result.roomId][0].id).emit("result-p2-to-p1", result); 
     })
+
+    socket.on('set-timer', (timerAction) => {
+      console.log('received set-timer', timerAction);
+      if (timerAction.action === 'start') {
+        countdown(1,0, timerAction);
+      }
+    });
 })
 
 app.get('*', (req, res) => {
