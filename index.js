@@ -13,7 +13,7 @@ function isEmptyObject(obj){
 
 app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 var server = app.listen(3001, () => console.log('Listening on port 3001'));
@@ -96,6 +96,14 @@ io.on('connection', (socket) => {
         for (let key of Object.keys(object)) {
           console.log('OBJFIlter before removal', object);
           object[key] = object[key].filter(obj => obj.id !== socket.id);
+          console.log('after removel', object[key]);
+          
+
+          //pass 'roomCreator' rule from user that disconnected to user that stayed in the room
+          if(object[key]?.length ===1) {
+            object[key][0].roomCreator = true
+          }
+
           if (Array.isArray(object[key]) && object[key].length <= 0) {
             console.log('Array is empty');
             delete object[key];
@@ -103,7 +111,7 @@ io.on('connection', (socket) => {
         }
 
 
-        console.log('OBJ filtered after removal:', object);
+        //console.log('OBJ filtered after removal:', object);
     })
 
     socket.on("createroom", (user) => {
